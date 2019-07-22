@@ -1,0 +1,115 @@
+ELK INSTALLATION
+
+ELASTIC SEARCH: 4gb
+
+$apt-get update
+
+$apt-get install openjdk-8-jre-headless
+
+$wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.6.3.deb 
+
+$dpkg -i elasticsearch-5.6.3.deb
+
+$vi /etc/elasticsearch/elasticsearch.yml   
+cluster.name :  globo-clustering
+         Node.name : public DNS of Elasticsreach (in production only       private DNS)
+        Network.host :  private ip of elasticsreach 
+
+$sysctl -w vm.max_map_count=262144
+
+$service elasticsearch start 
+
+      http://<ipadress>:9200 
+      SG allow All traffic 
+------------------------------------------------------------------------------------------
+LOGSTASH: 4gb
+
+$apt-get update
+
+$apt-get install openjdk-8-jre-headless
+
+$wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+
+$echo "deb https://artifacts.elastic.co/packages/5.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elasticsearch-5.x.list
+
+$apt-get update && apt-get install logstash
+
+$cd /usr/share/logstash 
+
+logstash$ bin/logstash -e "input { stdin {} } output { stdout {} }" enter some value.
+
+$cd /etc/logstash/conf.d
+
+conf.d$vi beats.conf
+input {
+   beats {
+       port => "5044"
+   }
+}
+output {
+   elasticsearch {
+       hosts => [ "54.255.170.251:9200" ]
+       index => "%{[@metadata][beat]}-%{+YYYY.MM.dd}"
+       document_type => "%{[@metadata][type]}"
+   }
+}
+
+$service logstash restart
+$cd /usr/share/logstash
+logstash$ bin/logstash -f /etc/logstash/conf.d/
+
+
+
+
+$service logstash restart
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+
+KIBANA INSTALLATION:2gb
+
+$apt-get update
+
+$wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+
+$echo "deb https://artifacts.elastic.co/packages/5.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elasticsearch-5.x.list
+
+$apt-get update
+
+$apt-get install kibana
+
+$vi /etc/kibana/kibana.yml
+
+server.host: private <ipaddress> of kibina
+server.name: private <hostname> of kibina
+elasticsearch.url: <elasticsearchurl> of  electric search
+
+$service kibana start
+
+http://kinbapublicip:5601 
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------
+INSTALL WINLOGBEAT ON WINDOWS:
+
+In google-->https://artifacts.elastic.co/downloads/beats/winlogbeat/winlogbeat-5.6.3-windows-x86_64.zip
+
+after download file -->extract in c:programfiles/winbeat/
+
+open power shell--->navigate that location--->c:/programfiles/winbeat.yml
+
+tags: ["ap-southeast-1"]
+fields:
+globo_environment: production
+
+output.logstash:
+# The Logstash hosts
+hosts: ["13.229.50.243:5044"]--->logstash publicip
+
+open powershell--->winbeat
+winbeat$Invoke-WebRequest -Method Put -InFile winlogbeat.template.json -Uri  http://54.255.170.251:9200/_template/winlogbeat?pretty -ContentType application/json
+
+
